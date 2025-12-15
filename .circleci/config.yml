@@ -19,30 +19,30 @@ jobs:
           platform: linux/amd64
           push-image: true
           region: '${AWS_REGION}'
-          repo: demo
+          repo: circleci
           registry-id: AWS_ECR_REGISTRY_ID
           repo-scan-on-push: true
           tag: latest
 
   continuous-delivery:
     machine: true
-    resource_class: dinesh/hate
+    resource_class: dinesh/haters
     steps:
       - aws-cli/setup
 
       - run:
           name: auth to aws ecr
-          command: aws ecr get-login-password --region ap-south-2 | docker login --username AWS --password-stdin 149660856401.dkr.ecr.ap-south-2.amazonaws.com
+          command: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 149660856401.dkr.ecr.us-east-1.amazonaws.com
           
 
       - run:
           name: pull image from private repository
-          command: docker pull 149660856401.dkr.ecr.ap-south-2.amazonaws.com/circle:latest
+          command: docker pull 149660856401.dkr.ecr.us-east-1.amazonaws.com/circleci:latest
           
       
       - run:
           name: run image
-          command: docker run -d -p 8080:8080 149660856401.dkr.ecr.ap-south-2.amazonaws.com/circle:latest
+          command: docker run -d -p 8080:8080 149660856401.dkr.ecr.us-east-1.amazonaws.com/circleci:latest
 workflows:
   CICD:
     jobs:
