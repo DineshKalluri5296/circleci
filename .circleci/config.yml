@@ -33,43 +33,30 @@ jobs:
   # CD: Pull Image & Run Container
   # ------------------------
   continuous-delivery:
-    docker:
-      - image: cimg/base:stable
+    machine: true
+    resource_class: dinesh/haters
     steps:
-      - setup_remote_docker
-
       - aws-cli/setup
 
       - run:
-          name: Login to Amazon ECR
-          command: |
-            aws ecr get-login-password --region us-east-1 \
-            | docker login --username AWS --password-stdin \
-              149660856401.dkr.ecr.us-east-1.amazonaws.com
+          name: auth to aws ecr
+          command: aws ecr get-login-password --region ap-south-2 | docker login --username AWS --password-stdin 149660856401.dkr.ecr.ap-south-2.amazonaws.com
+          
 
       - run:
-          name: Pull Docker Image
-          command: |
-            docker pull \
-            149660856401.dkr.ecr.us-east-1.amazonaws.com/circleci:latest
-
+          name: pull image from private repository
+          command: docker pull 149660856401.dkr.ecr.ap-south-2.amazonaws.com/circleci:latest
+          
+      
       - run:
-          name: Stop Existing Container (if any)
-          command: |
-            docker rm -f hate-api || true
-
-      - run:
-          name: Run Application Container
-          command: |
-            docker run -d \
-              --name hate-api \
-              -p 8080:8080 \
-              149660856401.dkr.ecr.us-east-1.amazonaws.com/circleci:latest
-
+          name: run image
+          command: docker run -d -p 8080:8080 149660856401.dkr.ecr.ap-south-2.amazonaws.com/circleci:latest
 workflows:
   CICD:
     jobs:
       - continuous-integration
       - continuous-delivery:
           requires:
-            - continuous-integration
+          - continuous-integration
+
+
