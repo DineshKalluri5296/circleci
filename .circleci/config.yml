@@ -1,13 +1,20 @@
 version: 2.1
+
 orbs:
   aws-ecr: circleci/aws-ecr@8.2.1
   aws-cli: circleci/aws-cli@3.1.4
+
 jobs:
+  # ------------------------
+  # CI: Build & Push Docker Image
+  # ------------------------
   continuous-integration:
     docker:
       - image: cimg/base:stable
     resource_class: medium
     steps:
+      - checkout
+
       - setup_remote_docker:
           docker_layer_caching: true
 
@@ -17,39 +24,52 @@ jobs:
           path: .
           platform: linux/amd64
           push-image: true
-          region: '${AWS_REGION}'
+          region: ${AWS_REGION}
           repo: circleci
           registry-id: AWS_ECR_REGISTRY_ID
-          repo-scan-on-push: true
           tag: latest
 
+  # ------------------------
+  # CD: Pull Image & Run Container
+  # ------------------------
   continuous-delivery:
-    machine: true
-    resource_class: dinesh/haters
+    docker:
+      - image: cimg/base:stable
     steps:
+      - setup_remote_docker
+
       - aws-cli/setup
 
       - run:
-          name: auth to aws ecr
-          command: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 149660856401.dkr.ecr.us-east-1.amazonaws.com
-          
+          name: Login to Amazon ECR
+          command: |
+            aws ecr get-login-password --region us-east-1 \
+            | docker login --username AWS --password-stdin \
+              149660856401.dkr.ecr.us-east-1.amazonaws.com
 
       - run:
-          name: pull image from private repository
-          command: docker pull 149660856401.dkr.ecr.us-east-1.amazonaws.com/circleci:latest
-          
-      
+          name: Pull Docker Image
+          command: |
+            docker pull \
+            149660856401.dkr.ecr.us-east-1.amazonaws.com/circleci:latest
+
       - run:
-          name: run image
-          command: docker run -d -p 8080:8080 149660856401.dkr.ecr.us-east-1.amazonaws.com/circleci:latest
+          name: Stop Existing Container (if any)
+          command: |
+            docker rm -f hate-api || true
+
+      - run:
+          name: Run Application Container
+          command: |
+            docker run -d \
+              --name hate-api \
+              -p 8080:8080 \
+              149660856401.dkr.ecr.us-east-1.amazonaws.com/circleci:latest
+
 workflows:
   CICD:
     jobs:
       - continuous-integration
       - continuous-delivery:
           requires:
-          - continuous-integration
-
-
-
-      
+            - continuous-integration
