@@ -7,7 +7,7 @@ orbs:
 jobs:
   # ------------------------
   # CI: Build & Push Docker Image
-  # ------------------------
+  # -----------------------
   continuous-integration:
     docker:
       - image: cimg/base:stable
