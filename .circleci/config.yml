@@ -33,7 +33,6 @@ jobs:
   # ------------------------
   continuous-delivery:
     machine: true
-    resource_class: dinesh/haters
     steps:
       - aws-cli/setup
 
